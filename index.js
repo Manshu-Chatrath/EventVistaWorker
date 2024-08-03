@@ -7,22 +7,17 @@ const Organizers = require("./models/organizers");
 const bcrypt = require("bcrypt");
 dotenv.config();
 
-const { REDIS_HOST, REDIS_PORT } = process.env;
+const { REDIS_URL } = process.env;
+
 const Bull = require("bull");
 const app = express();
 app.use(express.json());
-console.log(REDIS_HOST);
-// Create a new queue
-const notificationQueue = new Bull(
-  "notificationQueue",
-  `redis://${REDIS_HOST}:${REDIS_PORT}`
-);
-const eventQueue = new Bull(
-  "eventQueue",
-  `redis://${REDIS_HOST}:${REDIS_PORT}`
-);
 
-const userQueue = new Bull("userQueue", `redis://${REDIS_HOST}:${REDIS_PORT}`);
+// Create a new queue
+const notificationQueue = new Bull("notificationQueue", process.env.REDIS_URL);
+const eventQueue = new Bull("eventQueue", process.env.REDIS_URL);
+
+const userQueue = new Bull("userQueue", process.env.REDIS_URL);
 
 // Define a process function for the queue
 notificationQueue.process(async (job) => {
@@ -93,7 +88,6 @@ eventQueue.process(async (job) => {
 });
 
 eventQueue.on("failed", async (job, err) => {
-  console.error("Job failed:", err);
   await job.retry();
 });
 
